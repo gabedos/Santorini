@@ -22,6 +22,7 @@ class Board:
     
     # def move_worker(self):
 
+    @property
     def running(self):
         return self._observer.running
 
@@ -190,10 +191,10 @@ class VictoryObserver():
         return self._running
 
     def __call__(self, level):
-        print(f"got level {level}")
+        # print(f"got level {level}")
         if level == 3:
+            print("at level 3")
             self._running = False
-
 
 class BoardAdjacencyIter:
     """Returns an iterable of a space's adjacent spaces"""
@@ -238,7 +239,7 @@ class NoValidMoves(Exception):
         super().__init__(self.message)
 
 
-if __name__ == "__main__":
-    b = Board()
-    print(b)
-    bi = BoardAdjacencyIter(b._spaces, b._spaces[0][0])
+# if __name__ == "__main__":
+#     b = Board()
+#     print(b)
+#     bi = BoardAdjacencyIter(b._spaces, b._spaces[0][0])

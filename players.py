@@ -32,13 +32,10 @@ class PlayerFactory:
 
 
     def _valid_move(self):
-
+        # WIP what is this for? (- Iris)
         return True
-
-    def take_turn(self):
-        """Requests data from player and returns a tuple:
-        (Worker, MovementDirection, BuildingDirection)"""
-
+    
+    def choose_worker(self):
         valid_workers = ["A", "B"]
         invalid_workers = ['Y', "Z"]
         if self._pid == 2:
@@ -59,7 +56,10 @@ class PlayerFactory:
         if worker_id == 'B' or worker_id == 'Z':
             index = 1
         worker = self._workers[index]
-
+        
+        return worker
+    
+    def choose_space(self, worker):
         new_space = None
         dir_list = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']
 
@@ -74,8 +74,11 @@ class PlayerFactory:
                     print(f"Cannot move {dir_move}")
             else:
                 print("Not a valid direction")
-
-        self._board.move(worker, worker.cord, new_space)
+        
+        return new_space
+    
+    def choose_build(self, worker, new_space):
+        dir_list = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']
 
         inputting = True
         while inputting:
@@ -88,6 +91,18 @@ class PlayerFactory:
                     print(f"Cannot build {dir_build}")
             else:
                 print("Not a valid direction")
+        
+        return(new_space)
+
+    def take_turn(self):
+        """Requests data from player and returns a tuple:
+        (Worker, MovementDirection, BuildingDirection)"""
+
+        worker = self.choose_worker()
+        new_space = self.choose_space(worker)
+        self._board.move(worker, worker.cord, new_space)
+
+        new_space = self.choose_build(worker, new_space)
 
         # BUILD ON THE SPACE
         self._board.build(new_space)

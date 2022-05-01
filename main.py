@@ -1,3 +1,5 @@
+import sys
+
 from board import Board, Space, Worker, BoardAdjacencyIter, NoValidMoves
 from players import PlayerFactory
 
@@ -29,14 +31,14 @@ class BoardCLI:
                 self._turn += 1
                 self._display_menu()
                 self._players[(self._turn + 1) % 2].take_turn()
-        except NoValidMoves():
-            pass
+        except NoValidMoves:
+            print("no valid moves oop") # WIP
 
-        if self._turn % 2 == 0:
+        if (self._turn + 1) % 2 == 0:
             print("white has won")
         else:
             print("blue has won")
 
-
 if __name__ == "__main__":
     BoardCLI().run()
+    # sys.argv[1], sys.argv[2], etc
