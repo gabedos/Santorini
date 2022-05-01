@@ -62,34 +62,35 @@ class PlayerFactory:
 
         new_space = None
         dir_list = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']
-        while True:
+
+        inputting = True
+        while inputting:
             dir_move = input(f"Select a direction to move (n, ne, e, se, s, sw, w, nw)\n")
             if dir_move in dir_list:
-                # get coordinates of new space
                 new_space = worker.new_space(directionDict.get(dir_move))
-
-                # send heights to board
-                if self._board.check_heights(worker.cord, new_space):
-                    break
+                if new_space and self._board.check_heights(worker.cord, new_space) and self._board.is_unoccupied(new_space):
+                    inputting = False
                 else:
                     print(f"Cannot move {dir_move}")
             else:
                 print("Not a valid direction")
 
-        # MOVE THE WORKER
         self._board.move(worker, worker.cord, new_space)
 
-        while True:
+        inputting = True
+        while inputting:
             dir_build = input("Select a direction to build (n, ne, e, se, s, sw, w, nw)\n")
             if dir_build in dir_list:
-                if worker.new_space(directionDict.get(dir_build)) and True:
-                    break
+                new_space = worker.new_space(directionDict.get(dir_build))
+                if new_space and self._board.is_unoccupied(new_space):
+                    inputting = False
                 else:
                     print(f"Cannot build {dir_build}")
             else:
                 print("Not a valid direction")
 
         # BUILD ON THE SPACE
+        self._board.build(new_space)
 
 
 class HumanPlayer(PlayerFactory):

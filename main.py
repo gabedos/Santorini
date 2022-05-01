@@ -8,9 +8,6 @@ class BoardCLI:
         self._board = Board(self._workers)
         self._players = [PlayerFactory(self._board, 1, self._workers[0], self._workers[1]),
                         PlayerFactory(self._board, 2, self._workers[2], self._workers[3])]
-
-        # self._players = [PlayerFactory(self._board, True),
-        #                 PlayerFactory(self._board, False)]
         self._turn = 0
 
     def _display_menu(self):
@@ -27,6 +24,8 @@ class BoardCLI:
 
         try:                                # We'll raise an exception if the player has no valid moves
             while self._board.running:      # Observer checks if any player is standing on a 4 tall piece
+                # NEW METHOD, CHECK FOR ANY VALID MOVES, IF NONE EXIST. END THE GAME. OTHER PLAYER WINS... 
+                # COULD USE THE ITERATOR I MADE.. COULD ALSO MAKE THE ITERATOR BETTER WITH MORE CONDITION CHECKING?
                 self._turn += 1
                 self._display_menu()
                 self._players[(self._turn + 1) % 2].take_turn()

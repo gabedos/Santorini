@@ -2,8 +2,8 @@ class Board:
     """..."""
 
     def __init__(self, workers):
-        self._running = VictoryObserver()
-        self._spaces = [[Space((x,y), self._running) for x in range(5)] for y in range(5)]
+        self._observer = VictoryObserver()
+        self._spaces = [[Space((x,y), self._observer) for x in range(5)] for y in range(5)]
         self._workers = workers
 
     def __str__(self):
@@ -22,9 +22,8 @@ class Board:
     
     # def move_worker(self):
 
-    @property
     def running(self):
-        return self._running
+        return self._observer.running
 
     def check_heights(self, cord1, cord2):
         """Pass in current coordinates (cord1) and new coordinates (cord2)
@@ -48,8 +47,12 @@ class Board:
         self._spaces[y][x].add_worker(worker)
         worker.move(new)
 
-    def build(self):
-        pass
+    def build(self, cord):
+        self._spaces[cord[0]][cord[1]].build()
+
+    def is_unoccupied(self, cord):
+        return self._spaces[cord[0]][cord[1]].is_unoccupied()
+
 
 class Space:
     """..."""
@@ -110,14 +113,20 @@ class Space:
         self._observer(self._level)
 
     def is_unoccupied(self):
-        if not self._worker and self._rank < 4:
-            return True
-        else:
-            return False
 
-    # Used to determine whether space difference is < 1 for valid movement
+        if self._worker:
+            print("worker here")
+
+        if self._worker or self._level == 4:
+            return False
+        else:
+            return True
+
+    def build(self):
+        self._level += 1
+
     def __sub__(self, other):
-        return self._level - other.level
+        return self._level - other._level
 
     @property
     def cord(self):
@@ -181,6 +190,7 @@ class VictoryObserver():
         return self._running
 
     def __call__(self, level):
+        print(f"got level {level}")
         if level == 3:
             self._running = False
 
@@ -190,7 +200,7 @@ class BoardAdjacencyIter:
     
     def __init__(self, spaces, space):
 
-        cord = space.get_cord()
+        cord = space.cord
         adj_cords = []
 
         # Loop through 8 possible moves
@@ -228,7 +238,7 @@ class NoValidMoves(Exception):
         super().__init__(self.message)
 
 
-# if __name__ == "__main__":
-#     b = Board()
-#     print(b)
-#     bi = BoardAdjacencyIter(b._spaces, b._spaces[0][0])
+if __name__ == "__main__":
+    b = Board()
+    print(b)
+    bi = BoardAdjacencyIter(b._spaces, b._spaces[0][0])
