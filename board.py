@@ -1,5 +1,8 @@
+from xmlrpc.client import Boolean
+
+
 class Board:
-    """..."""
+    """Manages player & worker interactions with the board's spaces"""
 
     def __init__(self, workers):
         self._observer = VictoryObserver()
@@ -19,8 +22,6 @@ class Board:
             msg += '\n'
         msg += sep
         return msg
-    
-    # def move_worker(self):
 
     @property
     def running(self):
@@ -114,10 +115,6 @@ class Space:
         self._observer(self._level)
 
     def is_unoccupied(self):
-
-        if self._worker:
-            print("worker here")
-
         if self._worker or self._level == 4:
             return False
         else:
@@ -144,7 +141,7 @@ class Space:
 
 class Worker:
     """..."""
-    def __init__(self, id, cord = None):
+    def __init__(self, id:str, cord = None):
         """Creates a worker with an id: ABXY, and reference to its space"""
         self._id = id
         self._cord = cord
@@ -191,34 +188,50 @@ class VictoryObserver():
         return self._running
 
     def __call__(self, level):
-        # print(f"got level {level}")
         if level == 3:
             print("at level 3")
             self._running = False
 
-class BoardAdjacencyIter:
-    """Returns an iterable of a space's adjacent spaces"""
-    
-    def __init__(self, spaces, space):
 
-        cord = space.cord
+class BoardAdjacencyIter:
+    """Returns an iterable of a space's valid adjacent spaces"""
+    
+    def __init__(self, board:Board, cord:tuple, type:bool = True):
+        """type = True will check height differences for workers movement.
+        type = False will only check if the spaces are unoccupied"""
+
         adj_cords = []
 
         # Loop through 8 possible moves
         for x in range(-1,2):
             for y in range(-1,2):
+                
+                # Don't include the original space itself
                 if x == 0 and y == 0:
                     continue
-                if cord[0]+x > 4 or cord[0]+x < 0:
+
+                # Check if within bounds of the board
+                if cord[0]+y > 4 or cord[0]+y < 0:
                     continue
-                if cord[1]+y > 4 or cord[1]+y < 0:
+                if cord[1]+x > 4 or cord[1]+x < 0:
                     continue
-                adj_cords.append(tuple(map(sum, zip(cord, (x,y)))))
+
+                # Determining whether a worker can move to candidate from original
+                candidate = tuple(map(sum, zip(cord, (x,y))))
+                if type:
+                    if not board.check_heights(cord, candidate):
+                        continue
+                if not board.is_unoccupied(candidate):
+                    continue
+
+                adj_cords.append(candidate)
 
         self._spaces = []
         self._index = 0
-        for x,y in adj_cords:
-            self._spaces.append(spaces[x][y])
+        for y,x in adj_cords:
+            self._spaces.append((y,x))
+            # Not sure if we want the cords or spaces returned
+            #self._spaces.append(board._spaces[x][y])
 
     def __next__(self):
         if self._index == len(self._spaces):
@@ -229,14 +242,10 @@ class BoardAdjacencyIter:
 
     def __iter__(self):
         return self
-
-
-class NoValidMoves(Exception):
-    """Raised when the current player has no available moves on either player"""
-
-    def __init__(self):
-        self.message = "The player has no valid moves and the game is over"
-        super().__init__(self.message)
+    
+    @property
+    def spaces(self):
+        return self._spaces
 
 
 # if __name__ == "__main__":
