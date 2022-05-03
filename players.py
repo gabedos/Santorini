@@ -166,9 +166,25 @@ class RandomPlayer(PlayerFactory):
         # choose a random triple
         random_index = random.randint(0,len(triples)-1)
         triple = triples[random_index]
-        print(triple)
 
-        return
+        # Acquire desired worker
+        worker = self._workers[0]
+        if triple[0] == 'B' or triple[0] == 'Z':
+            worker = self._workers[1]
+
+        # Print to CLI
+        dir1 = (triple[1][0] - worker.cord[0], triple[1][1] - worker.cord[1])
+        dir2 = (triple[2][0] - triple[1][0], triple[2][1] - triple[1][1])
+        key1 = list(directionDict.keys())[list(directionDict.values()).index(dir1)]
+        key2 = list(directionDict.keys())[list(directionDict.values()).index(dir2)]
+        print(triple[0] + "," + key1 + "," + key2)
+
+        # Acquire desired location & move
+        self._board.move(worker, worker.cord, triple[1])
+
+        # Acquire desired location & build
+        self._board.build(triple[2])
+
 
 class HeuristicPlayer(PlayerFactory):
     pass
