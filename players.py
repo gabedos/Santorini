@@ -1,6 +1,8 @@
 import random
 
+from memento import Caretaker
 from board import Board, BoardAdjacencyIter, Worker
+from memento import Caretaker
 
 HUMAN = 1
 RANDOM = 2
@@ -19,12 +21,20 @@ directionDict = {
 }
 
 class PlayerFactory:
+    def create_player(self, board, pid, w1, w2, player_type = HUMAN):
+        player_mapping = {HUMAN: HumanPlayer, RANDOM: RandomPlayer, HEURISTIC: HeuristicPlayer}
+        return player_mapping[player_type](board, pid, w1, w2)
+
+class Player:
     
     def __init__(self, board, pid, w1, w2, player_type = HUMAN):
+        
         self._workers = [w1, w2]
         self._board = board
         self._pid = pid
         self._player_type = player_type
+
+        self._history = Caretaker(self)
 
         if self._pid == 1:
             board.move(w1, None, (3,1))
@@ -150,12 +160,19 @@ class PlayerFactory:
 
         return complete
     
+    def print_move(self, triple, cord1, cord2):
+        """cord1 and cord2 are the worker's coordinates"""
+        dir1 = (triple[1][0] - cord1, triple[1][1] - cord2)
+        dir2 = (triple[2][0] - triple[1][0], triple[2][1] - triple[1][1])
+        key1 = list(directionDict.keys())[list(directionDict.values()).index(dir1)]
+        key2 = list(directionDict.keys())[list(directionDict.values()).index(dir2)]
+        print(triple[0] + "," + key1 + "," + key2)
 
-class HumanPlayer(PlayerFactory):
-    pass
+class HumanPlayer(Player):
+    def __init__(self, board, pid, w1, w2):
+        super().__init__(board, pid, w1, w2, HUMAN)
 
-
-class RandomPlayer(PlayerFactory):
+class RandomPlayer(Player):
     def __init__(self, board, pid, w1, w2):
         super().__init__(board, pid, w1, w2, RANDOM) # right syntax?
 
@@ -173,11 +190,7 @@ class RandomPlayer(PlayerFactory):
             worker = self._workers[1]
 
         # Print to CLI
-        dir1 = (triple[1][0] - worker.cord[0], triple[1][1] - worker.cord[1])
-        dir2 = (triple[2][0] - triple[1][0], triple[2][1] - triple[1][1])
-        key1 = list(directionDict.keys())[list(directionDict.values()).index(dir1)]
-        key2 = list(directionDict.keys())[list(directionDict.values()).index(dir2)]
-        print(triple[0] + "," + key1 + "," + key2)
+        self.print_move(triple, worker.cord[0], worker.cord[1])
 
         # Acquire desired location & move
         self._board.move(worker, worker.cord, triple[1])
@@ -186,24 +199,32 @@ class RandomPlayer(PlayerFactory):
         self._board.build(triple[2])
 
 
-class HeuristicPlayer(PlayerFactory):
+class HeuristicPlayer(Player):
     def __init__(self, board, pid, w1, w2):
         super().__init__(board, pid, w1, w2, RANDOM) # right syntax?
 
-    def calculate_height(self):
-        return self._board.get_height(self._workers[0].cord) +\
-               self._board.get_height(self._workers[1].cord)
+    def calculate_height(self, cord1, cord2):
+        h1 = self._board.get_height(cord1)
+        h2 = self._board.get_height(cord2)
 
-    def calculate_center_score(self):
-        return self._board.get_center_score(self._workers[0].cord) +\
-               self._board.get_center_score(self._workers[1].cord)
+        # if height = 3, worker wins the game!
+        if h1 == 3:
+            h1 = float('inf')
+        if h2 == 3:
+            h2 = float('inf')
 
-    def calculate_distance_score(self):
+        return h1 + h2
+
+    def calculate_center_score(self, cord1, cord2):
+        return self._board.get_center_score(cord1) +\
+               self._board.get_center_score(cord2)
+
+    def calculate_distance_score(self, cord1, cord2):
         # distance_score for w1
-        dist_1 = self._board.get_distance_score(self._pid, self._workers[0].cord)
+        dist_1 = self._board.get_distance_score(self._pid, cord1)
 
         # distance_score for w2
-        dist_2 = self._board.get_distance_score(self._pid, self._workers[1].cord)
+        dist_2 = self._board.get_distance_score(self._pid, cord2)
 
         return 8 - dist_1 - dist_2
 
@@ -215,34 +236,47 @@ class HeuristicPlayer(PlayerFactory):
         best_triple = triples[0]
 
         # calculate move_score for each triple
-        # for triple in triples:
-            # get worker
-            # worker = self._workers[0]
-            # if triple[0] == 'B' or triple[0] == 'Z':
-            #     worker = self._workers[1]
+        c1 = 6
+        c2 = 3
+        c3 = 3
 
-            # calculate height score
-        triple = triples[0]
-        height_score = self.calculate_height()
-        center_score = self.calculate_center_score()
-        distance_score = self.calculate_distance_score()
-        c1 = 3
-        c2 = 2
-        c3 = 1
-        move_score = c1*height_score + c2*center_score + c3*distance_score
-        print(move_score)
+        for triple in triples:
+            if triple[0] == 'A' or triple[0] == 'Y':
+                # moving first worker
+                cord1 = triple[1]
+                cord2 = self._workers[1].cord
+            else:
+                # moving second worker
+                cord1 = self._workers[0].cord
+                cord2 = triple[1]
 
-        # choose a random triple
-        # random_index = random.randint(0,len(triples)-1)
-        # triple = triples[random_index]
+            height_score = self.calculate_height(cord1, cord2)
+            center_score = self.calculate_center_score(cord1, cord2)
+            distance_score = self.calculate_distance_score(cord1, cord2)
+            move_score = c1*height_score + c2*center_score + c3*distance_score
 
+            if move_score > best_move_score:
+                best_move_score = move_score
+                best_triple = triple
 
-# If two pieces have coordinates (x1, y1) and (x2, y2),
-# then their distance should be max(|x1-x2|, |y1-y2|)
+            # WIP nothing about where you build??
+        
+        # print(best_triple)
 
+        # Acquire desired worker
+        worker = self._workers[0]
+        if best_triple[0] == 'B' or best_triple[0] == 'Z':
+            worker = self._workers[1]
 
-# Create an adapter between human moves and robot moves
-# So we can then call the same functions on them?
+        # Print to CLI
+        self.print_move(best_triple, worker.cord[0], worker.cord[1])
+
+        # Acquire desired location & move
+        self._board.move(worker, worker.cord, best_triple[1])
+
+        # Acquire desired location & build
+        # WIP THIS IS A LOT OF REPEATED CODE FROM RANDOM PLAYER CLASS
+        self._board.build(best_triple[2])
 
 class NoValidMoves(Exception):
     """Raised when the current player has no available moves on either player"""

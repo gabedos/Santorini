@@ -18,7 +18,7 @@ class Memento(ABC):
 
 class ConcreteMemento(Memento):
     def __init__(self, state):
-        self._state = state # A copy of the board
+        self._state = state
 
     def get_state(self):
         """
@@ -33,21 +33,36 @@ class Caretaker():
     doesn't have access to the originator's state, stored inside the memento. It
     works with all mementos via the base Memento interface.
     """
-    def __init__(self, board):
-        self._history = []
-        self._board = board # saving the board might be hard... maybe save the move to undo/redo it
+    def __init__(self, player):
+        self._future = []   # redo
+        self._history = []  # undo
+        self._player = player
 
-    def backup(self):
-        print("\nCaretaker: Saving Originator's state...")
-        self._history.append(self._board.save())
+    def save(self):
+        # empty out redo list whenever player takes turn
+        self._future = []
+
+        # add move to history list
+        self._history.append(self._player.save())
         
-    def undo(self) -> None:
+    def undo(self):
 
+        # check if there are past moves
         if not len(self._history):
             return
 
         memento = self._history.pop()
-        try:
-            self._board.restore(memento)
-        except Exception:
-            self.undo()
+
+        # add to future list for redos
+        self._future.append(memento)
+
+        # call undo method on player
+        self._player.undo(memento)
+
+    def redo(self):
+
+        if not len(self._future):
+            return
+
+        memento = self._future.pop()
+        

@@ -29,27 +29,26 @@ class Board:
 
     def get_height(self, cord):
         return self._spaces[cord[0]][cord[1]].level
-    
+
     def get_center_score(self, cord):
         return Space.pos_rank[cord]
 
     def get_distance(self, cord1, cord2):
-        """calculating Chebyshev distance between two pieces"""
+        """Calculating Chebyshev distance between two pieces"""
         return max(abs(cord1[0] - cord2[0]), abs(cord1[1] - cord2[1]))
 
     def get_distance_score(self, pid, cord):
-        dist = 0
-
+        """Pass in the worker:pid and the xxxxxx:cord."""
         # if pid = 1, compare to Y/Z
         if pid == 1:
-            dist += self.get_distance(self._workers[2].cord, cord)
-            dist += self.get_distance(self._workers[3].cord, cord)
+            dist1 = self.get_distance(self._workers[2].cord, cord)
+            dist2 = self.get_distance(self._workers[3].cord, cord)
         # if pid = 2, compare to A/B
         else:
-            dist += self.get_distance(self._workers[0].cord, cord)
-            dist += self.get_distance(self._workers[1].cord, cord)
+            dist1 = self.get_distance(self._workers[0].cord, cord)
+            dist2 = self.get_distance(self._workers[1].cord, cord)
 
-        return dist
+        return min(dist1, dist2)
 
     def check_heights(self, cord1, cord2):
         """Pass in current coordinates (cord1) and new coordinates (cord2)
@@ -217,7 +216,7 @@ class VictoryObserver():
 
     def __call__(self, level):
         if level == 3:
-            print("at level 3")
+            # print("at level 3")
             self._running = False
 
 
