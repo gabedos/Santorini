@@ -1,3 +1,5 @@
+import random
+
 from board import Board, BoardAdjacencyIter, Worker
 
 HUMAN = 1
@@ -159,7 +161,13 @@ class RandomPlayer(PlayerFactory):
     
     def take_turn(self):
         # just for testing for now
-        print(self.list_triples())
+        triples = self.list_triples()
+
+        # choose a random triple
+        random_index = random.randint(0,len(triples)-1)
+        triple = triples[random_index]
+        print(triple)
+
         return
 
 class HeuristicPlayer(PlayerFactory):
