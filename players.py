@@ -120,15 +120,6 @@ class PlayerFactory:
         new_space = self.choose_build(worker, new_space)
         self._board.build(new_space)
 
-
-class HumanPlayer(PlayerFactory):
-    pass
-
-
-class RandomPlayer(PlayerFactory):
-    def __init__(self, board, pid, w1, w2):
-        super().__init__(board, pid, w1, w2, RANDOM) # right syntax?
-
     def list_triples(self):
         list1 = self._list_worker_moves(True)
         list2 = self._list_worker_moves(False)
@@ -159,8 +150,17 @@ class RandomPlayer(PlayerFactory):
 
         return complete
     
+
+class HumanPlayer(PlayerFactory):
+    pass
+
+
+class RandomPlayer(PlayerFactory):
+    def __init__(self, board, pid, w1, w2):
+        super().__init__(board, pid, w1, w2, RANDOM) # right syntax?
+
     def take_turn(self):
-        # just for testing for now
+        # get all possible triples
         triples = self.list_triples()
 
         # choose a random triple
@@ -187,7 +187,55 @@ class RandomPlayer(PlayerFactory):
 
 
 class HeuristicPlayer(PlayerFactory):
-    pass
+    def __init__(self, board, pid, w1, w2):
+        super().__init__(board, pid, w1, w2, RANDOM) # right syntax?
+
+    def calculate_height(self):
+        return self._board.get_height(self._workers[0].cord) +\
+               self._board.get_height(self._workers[1].cord)
+
+    def calculate_center_score(self):
+        return self._board.get_center_score(self._workers[0].cord) +\
+               self._board.get_center_score(self._workers[1].cord)
+
+    def calculate_distance_score(self):
+        # distance_score for w1
+        dist_1 = self._board.get_distance_score(self._pid, self._workers[0].cord)
+
+        # distance_score for w2
+        dist_2 = self._board.get_distance_score(self._pid, self._workers[1].cord)
+
+        return 8 - dist_1 - dist_2
+
+    def take_turn(self):
+        # get all possible triples
+        triples = self.list_triples()
+
+        best_move_score = 0
+        best_triple = triples[0]
+
+        # calculate move_score for each triple
+        # for triple in triples:
+            # get worker
+            # worker = self._workers[0]
+            # if triple[0] == 'B' or triple[0] == 'Z':
+            #     worker = self._workers[1]
+
+            # calculate height score
+        triple = triples[0]
+        height_score = self.calculate_height()
+        center_score = self.calculate_center_score()
+        distance_score = self.calculate_distance_score()
+        c1 = 3
+        c2 = 2
+        c3 = 1
+        move_score = c1*height_score + c2*center_score + c3*distance_score
+        print(move_score)
+
+        # choose a random triple
+        # random_index = random.randint(0,len(triples)-1)
+        # triple = triples[random_index]
+
 
 # If two pieces have coordinates (x1, y1) and (x2, y2),
 # then their distance should be max(|x1-x2|, |y1-y2|)
