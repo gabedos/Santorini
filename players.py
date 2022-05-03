@@ -31,7 +31,6 @@ class PlayerFactory:
             board.move(w1, None, (3,3))
             board.move(w2, None, (1,1))
 
-
     def _check_valid_moves(self):
         """Halts execution of the game when the player's workers have no moves"""
 
@@ -126,24 +125,24 @@ class HumanPlayer(PlayerFactory):
 
 class RandomPlayer(PlayerFactory):
     def __init__(self, board, pid, w1, w2):
-        super.__init__(self, board, pid, w1, w2, type = HEURISTIC) # right syntax?
+        super().__init__(board, pid, w1, w2, RANDOM) # right syntax?
 
     def list_triples(self):
         list1 = self._list_worker_moves(True)
         list2 = self._list_worker_moves(False)
-        return list1.extend(list2)
+        return list1 + list2
 
     def _list_worker_moves(self, is_w1:bool):
 
-        worker = self._w2
+        worker = self._workers[0]
         if is_w1:
-            worker = self._w1
+            worker = self._workers[1]
 
         start = worker.cord
         movements = []
         # Go through all of workers1 valid spaces and save them
         for move in BoardAdjacencyIter(self._board, start):
-            movements.append(worker, move)
+            movements.append((worker.id, move))
 
         complete = []
         # Then go through all of the valid movement spaces and find valid build spaces
@@ -153,14 +152,14 @@ class RandomPlayer(PlayerFactory):
             # Edge case: include the tile you were just on as a valid build
             complete.append((w, moved, start))
 
-        # WIP: still need to call the converter on complete... 
-        # or maybe we can have an adapter class! wooooo
+        # # WIP: still need to call the converter on complete... 
+        # # or maybe we can have an adapter class! wooooo
 
         return complete
     
     def take_turn(self):
         # just for testing for now
-        self.list_triples()
+        print(self.list_triples())
         return
 
 class HeuristicPlayer(PlayerFactory):

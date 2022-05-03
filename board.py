@@ -164,6 +164,10 @@ class Worker:
     def cord(self):
         return self._cord
     
+    @property
+    def id(self):
+        return self._id
+    
 # WIP: make sure these are right (y,x) or (x,y)?
 directionDict = {
     # The change in coor for each direction
@@ -212,12 +216,18 @@ class BoardAdjacencyIter:
 
                 # Check if within bounds of the board
                 if cord[0]+y > 4 or cord[0]+y < 0:
+                    # print("caught")
                     continue
                 if cord[1]+x > 4 or cord[1]+x < 0:
+                    # print("caught")
                     continue
 
                 # Determining whether a worker can move to candidate from original
-                candidate = tuple(map(sum, zip(cord, (x,y))))
+                # WIP (x,y) or (y,x)?
+                candidate = tuple(map(sum, zip(cord, (y,x))))
+                # print(candidate)
+                # print(cord)
+                # print(str(x) + " --- " + str(y))
                 if type:
                     if not board.check_heights(cord, candidate):
                         continue

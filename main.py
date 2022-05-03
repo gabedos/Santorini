@@ -1,7 +1,7 @@
 import sys
 
 from board import Board, Space, Worker, BoardAdjacencyIter
-from players import PlayerFactory, NoValidMoves
+from players import PlayerFactory, NoValidMoves, RandomPlayer
 
 HUMAN = 1
 RANDOM = 2
@@ -32,8 +32,18 @@ class BoardCLI:
 
         self._workers = [Worker('A'), Worker('B'), Worker('Y'), Worker('Z')]
         self._board = Board(self._workers)
-        self._players = [PlayerFactory(self._board, 1, self._workers[0], self._workers[1], self._p1_type),
+        # self._players = [PlayerFactory(self._board, 1, self._workers[0], self._workers[1], self._p1_type),
+        #                 PlayerFactory(self._board, 2, self._workers[2], self._workers[3], self._p2_type)]
+
+        self._players = [RandomPlayer(self._board, 1, self._workers[0], self._workers[1]),
                         PlayerFactory(self._board, 2, self._workers[2], self._workers[3], self._p2_type)]
+
+        # player_mapping = {"human": HumanPlayer,
+        #         "random": RandomPlayer,
+        #         "heuristic": HeuristicPlayer}
+
+        # return player_mapping[player_type](board, pid, w1, w2)
+
         self._turn = 0
 
     def _display_menu(self):
