@@ -23,7 +23,7 @@ class BoardCLI:
             self._p2_type = HUMAN
         elif p2_type == 'random':
             self._p2_type = RANDOM
-        elif p1_type == 'heuristic':
+        elif p2_type == 'heuristic':
             self._p2_type = HEURISTIC
 
         self._undo_redo = False
