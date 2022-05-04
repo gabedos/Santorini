@@ -1,8 +1,7 @@
 import sys
 
-from board import Board, Space, Worker, BoardAdjacencyIter
-from memento import Caretaker
-from players import PlayerFactory, Player, NoValidMoves, RandomPlayer, HeuristicPlayer
+from board import Board, Worker
+from players import PlayerFactory, NoValidMoves
 
 HUMAN = 1
 RANDOM = 2
@@ -53,7 +52,14 @@ class BoardCLI:
         msg += f"\nTurn: {self._turn}, {col} ({workers})"
 
         if self._display_score:
-            msg += ", yay"
+            # Player 1
+            if self._turn % 2 == 1:
+                scores = self._players[0].get_scores(self._workers[0].cord, self._workers[1].cord)
+            # Player 2
+            else:
+                scores = self._players[1].get_scores(self._workers[3].cord, self._workers[3].cord)
+
+            msg = msg + ", " + str(scores)
 
         print(msg)
 
@@ -69,17 +75,19 @@ class BoardCLI:
                 while self._undo_redo:
                     choice = input("undo, redo, or next\n")
                     if choice == "undo":
-                        if self._players[(self._turn) % 2].undo():
+                        if self._board.undo():
                             self._turn -= 1
                         self._display_menu()
                     elif choice == "redo":
-                        if self._players[(self._turn + 1) % 2].redo():
+                        if self._board.redo():
                             self._turn += 1
                         self._display_menu()
                     elif choice == "next":
                         break
 
-                self._players[(self._turn + 1) % 2].take_turn()
+                memento = self._players[(self._turn + 1) % 2].take_turn()
+                if self._undo_redo:
+                    self._board.save(memento)
 
         except NoValidMoves:
             # Termination but other player is the winner, not you

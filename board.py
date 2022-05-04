@@ -1,3 +1,5 @@
+# from memento import Caretaker, TurnMemento
+
 class Board:
     """Manages player & worker interactions with the board's spaces"""
 
@@ -5,6 +7,7 @@ class Board:
         self._observer = VictoryObserver()
         self._spaces = [[Space((x,y), self._observer) for x in range(5)] for y in range(5)]
         self._workers = workers
+        self._caretaker = Caretaker(self)
 
     def __str__(self):
         """Formats the board"""
@@ -78,6 +81,25 @@ class Board:
 
     def is_unoccupied(self, cord):
         return self._spaces[cord[0]][cord[1]].is_unoccupied()
+
+    def save(self, turn_memento):
+        self._caretaker.save(turn_memento)
+
+    def undo(self):
+        return self._caretaker.undo()
+
+    def undo_turn(self, turn_memento):
+        worker, move_space, build_space, was_space = turn_memento.get_turn()
+        self.move(worker, was_space)
+        self.unbuild(build_space)
+
+    def redo(self):
+        return self._caretaker.redo()
+
+    def redo_turn(self, turn_memento):
+        worker, move_space, build_space, was_space = turn_memento.get_turn()
+        self.move(worker, move_space)
+        self.build(build_space)
 
 
 class Space:
@@ -239,18 +261,12 @@ class BoardAdjacencyIter:
 
                 # Check if within bounds of the board
                 if cord[0]+y > 4 or cord[0]+y < 0:
-                    # print("caught")
                     continue
                 if cord[1]+x > 4 or cord[1]+x < 0:
-                    # print("caught")
                     continue
 
                 # Determining whether a worker can move to candidate from original
-                # WIP (x,y) or (y,x)?
                 candidate = tuple(map(sum, zip(cord, (y,x))))
-                # print(candidate)
-                # print(cord)
-                # print(str(x) + " --- " + str(y))
                 if type:
                     if not board.check_heights(cord, candidate):
                         continue
@@ -277,3 +293,51 @@ class BoardAdjacencyIter:
     @property
     def spaces(self):
         return self._spaces
+
+
+class TurnMemento:
+    def __init__(self, turn_log):
+        self._turn = turn_log
+
+    def get_turn(self):
+        return self._turn
+
+class Caretaker:
+    """
+    Manages the TurnMementos
+    """
+    def __init__(self, board:Board):
+        self._future = []   # redo
+        self._history = []  # undo
+        self._board = board
+
+    def save(self, turn_memento):
+        """
+        Saves a turn log containing:
+        (worker, move_space, build_space, was_space)
+        """
+
+        # Empty out redo list whenever player takes turn
+        self._future = []
+        self._history.append(turn_memento)
+        
+    def undo(self):
+
+        # check if there are past moves (WIP DO WE NEED TO DO SOMETHING WHEN UNDO NOT POSSIBLE?)
+        if len(self._history) == 0:
+            return False
+        memento = self._history.pop()
+        # Add to future list for redos
+        self._future.append(memento)
+        self._board.undo_turn(memento)
+        return True
+
+    def redo(self):
+
+        if len(self._future) == 0:
+            return False
+        memento = self._future.pop()
+        # Re-add to history list for re-undos
+        self._history.append(memento)
+        self._board.redo_turn(memento)
+        return True

@@ -1,9 +1,7 @@
-from distutils.command.build import build
 import random
 
-from memento import Caretaker, TurnMemento
-from board import Board, BoardAdjacencyIter, Worker
-from memento import Caretaker
+from board import Board, BoardAdjacencyIter, Worker, TurnMemento
+# from memento import TurnMemento
 
 HUMAN = 1
 RANDOM = 2
@@ -26,16 +24,13 @@ class PlayerFactory:
         player_mapping = {HUMAN: HumanPlayer, RANDOM: RandomPlayer, HEURISTIC: HeuristicPlayer}
         return player_mapping[player_type](board, pid, w1, w2)
 
-# abstract base class for player.. except not abstract?? idek (WIP)
 class Player:
-
+    """Abstract base class"""
     def __init__(self, board:Board, pid, w1:Worker, w2:Worker):
         
         self._workers = [w1, w2]
         self._board = board
         self._pid = pid
-
-        self._caretaker = Caretaker(self)
 
         if self._pid == 1:
             board.move(w1, (3,1))
@@ -68,31 +63,9 @@ class Player:
 
         self._board.move(worker, move_space)
         self._board.build(build_space)
-        self._caretaker.save(TurnMemento((worker, move_space, build_space, worker_was_space)))
 
-    def undo(self):
-        """
-        Undoes player's recentmost move and 
-        returns True iff available undo exists
-        """
-        return self._caretaker.undo()
+        return TurnMemento((worker, move_space, build_space, worker_was_space))
 
-    def undo_turn(self, turn_memento:TurnMemento):
-        worker, move_space, build_space, was_space = turn_memento.get_turn()
-        self._board.move(worker, was_space)
-        self._board.unbuild(build_space)
-
-    def redo(self):
-        """
-        Redoes player's recentmost undo and 
-        returns True iff available redo exists
-        """
-        return self._caretaker.redo()
-
-    def redo_turn(self, turn_memento:TurnMemento):
-        worker, move_space, build_space, was_space = turn_memento.get_turn()
-        self._board.move(worker, move_space)
-        self._board.build(build_space)
 
     def _input_turn(self):
         raise NotImplementedError()
@@ -135,18 +108,10 @@ class Player:
     def calculate_height(self, cord1, cord2):
         h1 = self._board.get_height(cord1)
         h2 = self._board.get_height(cord2)
-
-        # if height = 3, worker wins the game!
-        if h1 == 3:
-            h1 = float('inf')
-        if h2 == 3:
-            h2 = float('inf')
-
         return h1 + h2
 
     def calculate_center_score(self, cord1, cord2):
-        return self._board.get_center_score(cord1) +\
-               self._board.get_center_score(cord2)
+        return self._board.get_center_score(cord1) + self._board.get_center_score(cord2)
 
     def calculate_distance_score(self, cord1, cord2):
         # distance_score for w1
@@ -156,18 +121,20 @@ class Player:
         dist_2 = self._board.get_distance_score(self._pid, cord2)
 
         return 8 - dist_1 - dist_2
+    
+    def get_scores(self, cord1, cord2):
+        height_score = self.calculate_height(cord1, cord2)
+        center_score = self.calculate_center_score(cord1, cord2)
+        distance_score = self.calculate_distance_score(cord1, cord2)
+        return (height_score, center_score, distance_score)        
 
     def calc_score(self, cord1, cord2):
         """Calculate player score"""
         c1 = 4
         c2 = 2.5
         c3 = 1.5
-
-        height_score = self.calculate_height(cord1, cord2)
-        center_score = self.calculate_center_score(cord1, cord2)
-        distance_score = self.calculate_distance_score(cord1, cord2)
-
-        turn_score = c1*height_score + c2*center_score + c3*distance_score
+        scores = self.get_scores(cord1, cord2)
+        turn_score = c1*scores[0] + c2*scores[1] + c3*scores[2]
         return turn_score
 
 class HumanPlayer(Player):
@@ -278,6 +245,18 @@ class RandomPlayer(Player):
 class HeuristicPlayer(Player):
     def __init__(self, board, pid, w1, w2):
         super().__init__(board, pid, w1, w2)
+
+    def calculate_height(self, cord1, cord2):
+        h1 = self._board.get_height(cord1)
+        h2 = self._board.get_height(cord2)
+
+        # if height = 3, worker wins the game!
+        if h1 == 3:
+            h1 = float('inf')
+        if h2 == 3:
+            h2 = float('inf')
+
+        return h1 + h2
 
     def _input_turn(self):
         
