@@ -1,68 +1,47 @@
-from abc import ABC, abstractmethod
+class TurnMemento:
+    def __init__(self, turn_log):
+        self._turn = turn_log
 
-# Originator == BoardCLI or Board?
-
-class Memento(ABC):
-    """
-    The Memento interface provides a way to retrieve the memento's metadata,
-    such as creation date or name. However, it doesn't expose the Originator's
-    state.
-    """
-    @abstractmethod
-    def get_name(self) -> str:
-        pass
-
-    @abstractmethod
-    def get_date(self) -> str:
-        pass
-
-class ConcreteMemento(Memento):
-    def __init__(self, state):
-        self._state = state
-
-    def get_state(self):
-        """
-        The Originator uses this method when restoring its state.
-        """
-        return self._state
+    def get_turn(self):
+        return self._turn
 
 
 class Caretaker():
     """
-    The Caretaker doesn't depend on the Concrete Memento class. Therefore, it
-    doesn't have access to the originator's state, stored inside the memento. It
-    works with all mementos via the base Memento interface.
+    Manages the TurnMementos
     """
     def __init__(self, player):
         self._future = []   # redo
         self._history = []  # undo
         self._player = player
 
-    def save(self):
-        # empty out redo list whenever player takes turn
-        self._future = []
+    def save(self, turn_memento):
+        """
+        Saves a turn log containing:
+        (worker, move_space, build_space, was_space)
+        """
 
-        # add move to history list
-        self._history.append(self._player.save())
+        # Empty out redo list whenever player takes turn
+        self._future = []
+        self._history.append(turn_memento)
         
     def undo(self):
 
-        # check if there are past moves
-        if not len(self._history):
-            return
-
+        # check if there are past moves (WIP DO WE NEED TO DO SOMETHING WHEN UNDO NOT POSSIBLE?)
+        if len(self._history) == 0:
+            return False
         memento = self._history.pop()
-
-        # add to future list for redos
+        # Add to future list for redos
         self._future.append(memento)
-
-        # call undo method on player
-        self._player.undo(memento)
+        self._player.undo_turn(memento)
+        return True
 
     def redo(self):
 
-        if not len(self._future):
-            return
-
+        if len(self._future) == 0:
+            return False
         memento = self._future.pop()
-        
+        # Re-add to history list for re-undos
+        self._history.append(memento)
+        self._player.redo_turn(memento)
+        return True

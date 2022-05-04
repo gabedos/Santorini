@@ -1,6 +1,7 @@
 import sys
 
 from board import Board, Space, Worker, BoardAdjacencyIter
+from memento import Caretaker
 from players import PlayerFactory, Player, NoValidMoves, RandomPlayer, HeuristicPlayer
 
 HUMAN = 1
@@ -36,11 +37,6 @@ class BoardCLI:
 
         self._workers = [Worker('A'), Worker('B'), Worker('Y'), Worker('Z')]
         self._board = Board(self._workers)
-        # self._players = [PlayerFactory(self._board, 1, self._workers[0], self._workers[1], self._p1_type),
-        #                 PlayerFactory(self._board, 2, self._workers[2], self._workers[3], self._p2_type)]
-
-        # self._players = [HeuristicPlayer(self._board, 1, self._workers[0], self._workers[1]),
-                        # HeuristicPlayer(self._board, 2, self._workers[2], self._workers[3])]
 
         self._players = [PlayerFactory().create_player(self._board, 1, self._workers[0], self._workers[1], self._p1_type),
                         PlayerFactory().create_player(self._board, 2, self._workers[2], self._workers[3], self._p2_type)]
@@ -56,26 +52,35 @@ class BoardCLI:
             workers = "YZ"
         msg += f"\nTurn: {self._turn}, {col} ({workers})"
 
+        if self._display_score:
+            msg += ", yay"
+
         print(msg)
 
     def run(self):
+
         try:
             # Observer checks if any player is standing on a 4 tall piece
             while self._board.running:
                 self._turn += 1
                 self._display_menu()
 
+                max_turn = self._turn
                 while self._undo_redo:
                     choice = input("undo, redo, or next\n")
-
                     if choice == "undo":
-                        self._players[(self._turn + 1) % 2].undo()
+                        if self._players[(self._turn) % 2].undo():
+                            self._turn -= 1
+                        self._display_menu()
                     elif choice == "redo":
-                        self._players[(self._turn + 1) % 2].redo()
+                        if self._players[(self._turn + 1) % 2].redo():
+                            self._turn += 1
+                        self._display_menu()
                     elif choice == "next":
                         break
 
                 self._players[(self._turn + 1) % 2].take_turn()
+
         except NoValidMoves:
             # Termination but other player is the winner, not you
             self._turn += 1

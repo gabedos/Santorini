@@ -1,6 +1,3 @@
-from xmlrpc.client import Boolean
-
-
 class Board:
     """Manages player & worker interactions with the board's spaces"""
 
@@ -61,11 +58,12 @@ class Board:
             return True
         return False
 
-    def move(self, worker, old, new):
+    def move(self, worker, new):
         """Updates the placement of a worker on the board
-        takes the old coordinates (x1,y1) and the new coordinates (x2,y2)"""
-        if old != None:
-            y, x = old
+        takes the old worker coordinates (x1,y1) and the new coordinates (x2,y2)"""
+
+        if worker.cord != None:
+            y, x = worker.cord
             self._spaces[y][x].remove_worker()
 
         y, x = new
@@ -75,12 +73,15 @@ class Board:
     def build(self, cord):
         self._spaces[cord[0]][cord[1]].build()
 
+    def unbuild(self, cord):
+        self._spaces[cord[0]][cord[1]].unbuild()
+
     def is_unoccupied(self, cord):
         return self._spaces[cord[0]][cord[1]].is_unoccupied()
 
 
 class Space:
-    """..."""
+    """Stores the data for the board's space"""
 
     # center = 2, ring = 1, edge = 0
     pos_rank = {
@@ -145,6 +146,13 @@ class Space:
 
     def build(self):
         self._level += 1
+        # assert(self._worker == None)
+        # assert(self._level <= 4)
+
+    def unbuild(self):
+        self._level -= 1
+        # assert(self._worker == None)
+        # assert(self._level >= 0)
 
     def __sub__(self, other):
         return self._level - other._level
@@ -163,9 +171,14 @@ class Space:
 
 
 class Worker:
-    """..."""
+    """
+    Worker class used to represent workers on the board
+    """
     def __init__(self, id:str, cord = None):
-        """Creates a worker with an id: ABXY, and reference to its space"""
+        """
+        Creates a worker with an id: ABXY, 
+        and reference to its space
+        """
         self._id = id
         self._cord = cord
 
@@ -190,19 +203,6 @@ class Worker:
     @property
     def id(self):
         return self._id
-    
-# WIP: make sure these are right (y,x) or (x,y)?
-directionDict = {
-    # The change in coor for each direction
-    "n":(0,1),
-    "ne":(-1,1),
-    "e":(-1,0),
-    "se":(-1,-1),
-    "s":(0,-1),
-    "sw":(1,-1),
-    "w":(1,0),
-    "nw":(1,1)
-}
 
 
 class VictoryObserver():
@@ -263,8 +263,6 @@ class BoardAdjacencyIter:
         self._index = 0
         for y,x in adj_cords:
             self._spaces.append((y,x))
-            # Not sure if we want the cords or spaces returned
-            #self._spaces.append(board._spaces[x][y])
 
     def __next__(self):
         if self._index == len(self._spaces):
@@ -279,9 +277,3 @@ class BoardAdjacencyIter:
     @property
     def spaces(self):
         return self._spaces
-
-
-# if __name__ == "__main__":
-#     b = Board()
-#     print(b)
-#     bi = BoardAdjacencyIter(b._spaces, b._spaces[0][0])
