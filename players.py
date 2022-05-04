@@ -51,7 +51,7 @@ class Player:
 
         raise NoValidMoves()
     
-    def take_turn(self):
+    def take_turn(self, _undo_redo):
         """
         Requests movement & build data from player and execute actions
         """
@@ -64,8 +64,8 @@ class Player:
         self._board.move(worker, move_space)
         self._board.build(build_space)
 
-        return TurnMemento((worker, move_space, build_space, worker_was_space))
-
+        if _undo_redo:
+            self._board.save(TurnMemento((worker, move_space, build_space, worker_was_space)))
 
     def _input_turn(self):
         raise NotImplementedError()
@@ -114,25 +114,20 @@ class Player:
         return self._board.get_center_score(cord1) + self._board.get_center_score(cord2)
 
     def calculate_distance_score(self, cord1, cord2):
-        # distance_score for w1
-        dist_1 = self._board.get_distance_score(self._pid, cord1)
-
-        # distance_score for w2
-        dist_2 = self._board.get_distance_score(self._pid, cord2)
-
-        return 8 - dist_1 - dist_2
+        dist = self._board.get_distance_score(self._pid, cord1, cord2)
+        return 8 - dist
     
     def get_scores(self, cord1, cord2):
         height_score = self.calculate_height(cord1, cord2)
         center_score = self.calculate_center_score(cord1, cord2)
         distance_score = self.calculate_distance_score(cord1, cord2)
-        return (height_score, center_score, distance_score)        
+        return (height_score, center_score, distance_score)
 
     def calc_score(self, cord1, cord2):
         """Calculate player score"""
-        c1 = 4
-        c2 = 2.5
-        c3 = 1.5
+        c1 = 3
+        c2 = 2
+        c3 = 1
         scores = self.get_scores(cord1, cord2)
         turn_score = c1*scores[0] + c2*scores[1] + c3*scores[2]
         return turn_score
@@ -215,7 +210,6 @@ class HumanPlayer(Player):
                 if build_space and (self._board.is_unoccupied(build_space) or relative_build == (0,0)):
                     inputting = False
                 else:
-                    print(build_space)
                     print(f"Cannot build {dir_build}")
             else:
                 print("Not a valid direction")
@@ -270,12 +264,18 @@ class HeuristicPlayer(Player):
         for turn in possible_turns:
 
             if turn[0] == 'A' or turn[0] == 'Y':
+                # First coordinate is stored in `turn`
                 cord1 = turn[1]
+
+                # Second coordinate is the other worker
                 cord2 = self._workers[1].cord
             else:
+                # First coordinate is the other worker
                 cord1 = self._workers[0].cord
-                cord2 = turn[1]
 
+                # Second coordinate is stored in turn
+                cord2 = turn[1]
+            
             turn_score = self.calc_score(cord1, cord2)
 
             if turn_score > best_turn_score:

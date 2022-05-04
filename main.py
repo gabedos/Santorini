@@ -57,13 +57,14 @@ class BoardCLI:
                 scores = self._players[0].get_scores(self._workers[0].cord, self._workers[1].cord)
             # Player 2
             else:
-                scores = self._players[1].get_scores(self._workers[3].cord, self._workers[3].cord)
+                scores = self._players[1].get_scores(self._workers[2].cord, self._workers[3].cord)
 
             msg = msg + ", " + str(scores)
 
         print(msg)
 
     def run(self):
+        has_gridlock = False
 
         try:
             # Observer checks if any player is standing on a 4 tall piece
@@ -71,7 +72,6 @@ class BoardCLI:
                 self._turn += 1
                 self._display_menu()
 
-                max_turn = self._turn
                 while self._undo_redo:
                     choice = input("undo, redo, or next\n")
                     if choice == "undo":
@@ -85,17 +85,21 @@ class BoardCLI:
                     elif choice == "next":
                         break
 
-                memento = self._players[(self._turn + 1) % 2].take_turn()
-                if self._undo_redo:
-                    self._board.save(memento)
+                self._players[(self._turn + 1) % 2].take_turn(self._undo_redo)
+
 
         except NoValidMoves:
             # Termination but other player is the winner, not you
+            has_gridlock = True
+
+        # Someone has won!
+        self._turn += 1
+        self._display_menu()
+
+        if has_gridlock:
             self._turn += 1
 
-        print(self._board)
-
-        if (self._turn + 1) % 2 == 0:
+        if self._turn % 2 == 0:
             print("white has won")
         else:
             print("blue has won")

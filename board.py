@@ -37,18 +37,28 @@ class Board:
         """Calculating Chebyshev distance between two pieces"""
         return max(abs(cord1[0] - cord2[0]), abs(cord1[1] - cord2[1]))
 
-    def get_distance_score(self, pid, cord):
-        """Pass in the worker:pid and the xxxxxx:cord."""
-        # if pid = 1, compare to Y/Z
+    def get_distance_score(self, pid, cord1, cord2):
+        """Pass in the worker:pid and the two coordinates."""
+        # If pid = 1, compare to Y/Z
         if pid == 1:
-            dist1 = self.get_distance(self._workers[2].cord, cord)
-            dist2 = self.get_distance(self._workers[3].cord, cord)
-        # if pid = 2, compare to A/B
-        else:
-            dist1 = self.get_distance(self._workers[0].cord, cord)
-            dist2 = self.get_distance(self._workers[1].cord, cord)
+            # Find minimum distance to Y
+            dist11 = self.get_distance(self._workers[2].cord, cord1)
+            dist12 = self.get_distance(self._workers[2].cord, cord2)
 
-        return min(dist1, dist2)
+            # Find minimum distance to Z
+            dist21 = self.get_distance(self._workers[3].cord, cord1)
+            dist22 = self.get_distance(self._workers[3].cord, cord2)
+        # If pid = 2, compare to A/B
+        else:
+            # Find minimum distance to A
+            dist11 = self.get_distance(self._workers[0].cord, cord1)
+            dist12 = self.get_distance(self._workers[0].cord, cord2)
+
+            # Find minimum distance to B
+            dist21 = self.get_distance(self._workers[1].cord, cord1)
+            dist22 = self.get_distance(self._workers[1].cord, cord2)
+
+        return min(dist11, dist12) + min(dist21, dist22)
 
     def check_heights(self, cord1, cord2):
         """Pass in current coordinates (cord1) and new coordinates (cord2)
